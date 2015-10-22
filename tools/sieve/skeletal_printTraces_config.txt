@@ -1,0 +1,4 @@
+exe : <path to the executable>
+bktrace : <path to backtraces file>
+hotpages : <path to hot pages file>
+l0 : <size of level 0 main memory i.e. size of hot pages set to consider for fast mallocs. eg: 8 MB>
