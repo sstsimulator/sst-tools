@@ -1,4 +1,6 @@
-# miniFE based sample sst configuration file
+# stream based sample sst configuration file
+# for using Sieve to model a 16 core processor 
+# with private LLCs
 import sst
 import os
 from optparse import OptionParser
@@ -8,23 +10,23 @@ os.environ['OMP_NUM_THREADS']="16"
 
 sst_root = os.getenv( "SST_ROOT" ) # Path to the sst root directory containing the tools
 fsroot = os.getenv( "FS_ROOT" )    # File system root
-experiment_root = fsroot+"/src/sst-simulator/mytest/" # Path to the experiment folder
-omp_root = fsroot + "/src/libomp_oss/tmp/lin_32e-rtl_5_nor_dyn.deb.41.c0.s0-volta" # Intel OpenMP built using "debug" mode
+tools_root = os.getenv( "SST_TOOLS_ROOT" )
+experiment_root = fsroot + "/stream/stream" # Path to the experiment folder
 
 memDebug = 0
 memDebugLevel = 7
 baseclock = 2000  # in MHz
 clock = "%g MHz"%(baseclock)
-busLat = "50ps"
+busLat = "100ps"
 
 # For Ariel, may not be necessary
 memSize = 8192 # in MB"
 pageSize = 4  # in KB"
 num_pages = memSize * 1024 / pageSize
 
-sievePrefetchParams = {
-        "prefetcher": "cassini.AddrHistogrammer",
-        "prefetcher.addr_cutoff" : "16GiB" # Cutoff - don't profile virtual addresses over 16 GiB
+sieveProfilerParams = {
+        "profiler": "cassini.AddrHistogrammer",
+        "profiler.addr_cutoff" : "16GiB" # Cutoff - don't profile virtual addresses over 16 GiB
         }
 
 op = OptionParser()
@@ -33,26 +35,16 @@ op.add_option("-n", "--num_elems", action="store", type="int", dest="nelem", def
 
 #memDebug = options.memDebug
 corecount = 16
-quads = corecount / 4
-if corecount % 4:
-    quads = quads+1
-    
+
 minifeArgs = ({
         "envparamcount" : 3,             # environment variables
         "envparamname0" : "LD_PRELOAD",  # For weak dynamic linking
-        "envparamval0" : sst_root + "/tools/sieve/libbtmalloc.so",
+        "envparamval0" : tools_root + "/tools/sieve/libbtmalloc.so",
         "envparamname1" : "LD_LIBRARY_PATH",
-        "envparamval1" : omp_root + ":" + sst_root + "/tools/ariel/api:" + os.environ['LD_LIBRARY_PATH'],
+        "envparamval1" : tools_root + "/tools/ariel/api:" + os.environ['LD_LIBRARY_PATH'],
         "envparamname2" : "CUTOFF_SIZE", # cut off size for allocations to be traced by btmalloc.cpp
         "envparamval2" : 64,
-        "executable": experiment_root+"/miniFE-2.0_openmp_opt/src/miniFE.x", # application
-	"appargcount" : 6,   # application arguments follow
-        "apparg0" : "-nx",
-	"apparg1" : options.nelem,
-	"apparg2" : "-ny",
-	"apparg3" : options.nelem,
-	"apparg4" : "-nz",
-	"apparg5" : options.nelem
+        "executable": experiment_root, # application
     })
 
 # ariel cpu
@@ -65,36 +57,31 @@ ariel.addParams({
  	"maxissuepercycle" : 2,
  	"pipetimeout" : 0,
 	"corecount" : corecount,
- 	"arielmode" : 0,
-        "arieltool" : sst_root + "/tools/ariel/fesimple/fesimple.so",
+ 	"arielmode" : 1,
  	"memorylevels" : 1,
         "pagecount0" : num_pages,
 	"defaultlevel" : 0
     })
 
-def doQuad(quad, cores):
-    sst.pushNamePrefix("q%d"%quad)
+def doCores(cores):
 
     for x in range(cores):
-        core = 4*quad + x
+        core = x
         sieveId = sst.Component("sieve_%d"%core, "memHierarchy.Sieve")
         sieveId.addParams({
-            "cache_size": "32KB",
+            "cache_size": "256KB",  # Should be a reasonable LLC size
             "associativity": 8,
-            "cache_line_size": 64
+            "cache_line_size": 64,
             })
         arielL1Link = sst.Link("cpu_cache_link_%d"%core)
-        arielL1Link.connect((ariel, "cache_link_%d"%core, busLat), (sieveId, "cpu_link", busLat))
+        arielL1Link.connect((ariel, "cache_link_%d"%core, busLat), (sieveId, "cpu_link_0", busLat))
 
-        sieveId.addParams(sievePrefetchParams)
-
-    sst.popNamePrefix()
+        sieveId.addParams(sieveProfilerParams)
 
 
 
-for x in range(quads-1):
-    doQuad(x, 4)
-doQuad(quads-1, corecount-(4*(quads-1)))
+
+doCores(corecount)
 
 
 statoutputs = dict([(1,"sst.statOutputConsole"), (2,"sst.statOutputCSV"), (3,"sst.statOutputTXT")])
