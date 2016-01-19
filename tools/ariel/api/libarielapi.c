@@ -14,9 +14,13 @@
 #include <stdio.h>
 
 void ariel_enable() {
-	printf("ARIEL-CLIENT: Library enabled.\n");
+    printf("ARIEL-CLIENT: Library enabled.\n");
 }
 
 uint64_t ariel_cycles() {
-	return 0;
+    return 0;
+}
+
+void ariel_output_stats() {
+    printf("ARIEL-CLIENT: Printing statistics.\n");
 }
