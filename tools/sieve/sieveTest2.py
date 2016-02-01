@@ -25,11 +25,6 @@ memSize = 8192 # in MB"
 pageSize = 4  # in KB"
 num_pages = memSize * 1024 / pageSize
 
-sievePrefetchParams = {
-        "prefetcher": "cassini.AddrHistogrammer",
-        "prefetcher.addr_cutoff" : "16GiB" # Cutoff - don't profile virtual addresses over 16 GiB
-        }
-
 op = OptionParser()
 op.add_option("-n", "--num_elems", action="store", type="int", dest="nelem", default=50)
 (options, args) = op.parse_args()
@@ -49,8 +44,19 @@ minifeArgs = ({
         "envparamname2" : "CUTOFF_SIZE", # cut off size for allocations to be traced by btmalloc.cpp
         "envparamval2" : 64,
         #"executable": "/home/afrodri/sstminiapps/benchmarks/stream/stream_ae", # application
-        "executable": "/home/afrodri/sstminiapps/benchmarks/stream/malloc_ae", # application
-        "appargcount" : 0,   # application arguments follow
+        #"executable": "/home/afrodri/sstminiapps/benchmarks/stream/malloc_ae", # application
+        #"appargcount" : 0,   # application arguments follow
+        #"executable" : "/home/afrodri/sstminiapps/GTC-P/src/mpi/bench_gtc_serial_gcc",
+        #"appargcount" : 3,   # application arguments follow
+        #"apparg0" : "/home/afrodri/sstminiapps/GTC-P/run/A.txt",
+        #"apparg1" : "30",
+        #"apparg2" : "64"
+
+        "executable": "/home/afrodri/sstminiapps/CoMD/exmatex-CoMD-1e850ec/bin/CoMD-serial",
+        "appargcount" : 2,   # application arguments follow    
+        "apparg0" : "-N",
+        "apparg1" : "3"
+
         #"appargcount" : 6,   # application arguments follow
         #"apparg0" : "-nx",
 	#"apparg1" : options.nelem,
@@ -73,7 +79,8 @@ ariel.addParams({
     "corecount" : corecount,
     "arielmode" : 1,
     #"arieltool" : sst_tool_root + "/ariel/fesimple/fesimple.so",
-    "arieltool" : sst_tool_root + "/ariel/femlm/femlmtool.so",
+    #"arieltool" : sst_tool_root + "/ariel/femlm/femlmtool.so",
+    "arieltool" : "/home/afrodri/sst/sst/elements/ariel/fesimple.so",
     "memorylevels" : 1,
     "pagecount0" : num_pages,
     "vtop_transpate": "yes",
@@ -87,7 +94,7 @@ def doQuad(quad, cores):
         core = 4*quad + x
         
         arielL1Link = sst.Link("cpu_cache_link_%d"%core)
-        arielL1Link.connect((ariel, "cache_link_%d"%core, busLat), (sieveId, "cpu_link", busLat))
+        arielL1Link.connect((ariel, "cache_link_%d"%core, busLat), (sieveId, "cpu_link_%d"%core, busLat))
         arielALink = sst.Link("cpu_alloc_link_%d"%core)
         arielALink.connect((ariel, "alloc_link_%d"%core, busLat), (sieveId, "alloc_link", busLat))
         
@@ -98,9 +105,10 @@ def doQuad(quad, cores):
 
 sieveId = sst.Component("sieve", "memHierarchy.Sieve")
 sieveId.addParams({
-    "cache_size": "32KB",
-    "associativity": 8,
-    "cache_line_size": 64
+    "cache_size": "256KB",
+    "associativity": 16,
+    "cache_line_size": 64,
+    "output_file" : "mallocRank.txt"
 })    
 
 for x in range(quads-1):
@@ -112,22 +120,6 @@ statoutputs = dict([(1,"sst.statOutputConsole"), (2,"sst.statOutputCSV"), (3,"ss
 
 sst.setStatisticLoadLevel(7)
 sst.setStatisticOutput(statoutputs[2])
-sst.enableStatisticForComponentType("memHierarchy.Sieve",
-                                    "histogram_reads",
-                                        {"type":"sst.HistogramStatistic",
-                                         "minvalue" : "0",       # The beginning virtual address to track
-                                         "numbins"  : "4000000", # The ending virtual address relative to the beginning address
-                                         "binwidth" : "4096"
-                                         #"rate" : "100ns"
-                                         })
-sst.enableStatisticForComponentType("memHierarchy.Sieve",
-                                    "histogram_writes",
-                                        {"type":"sst.HistogramStatistic",
-                                         "minvalue" : "0",
-                                         "numbins"  : "4000000", 
-                                         "binwidth" : "4096"
-                                         })
-
 
 print "done configuring SST"
 
