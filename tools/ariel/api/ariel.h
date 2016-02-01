@@ -21,6 +21,7 @@ extern "C" {
 
 void ariel_enable();
 uint64_t ariel_cycles();
+void ariel_output_stats();
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }
