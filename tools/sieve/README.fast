@@ -1,0 +1,24 @@
+
+**Using 'fast' memsieve**
+
+The sample SST config and processing tool are in the devel branch of sst-tools/tools/sieve
+
+'sieveTest2.py’ is the SST configuration. It is based off the original sieveTest.py, so it should function the same way. Not, it is currently set to a single 256KB, 16-way cache. Paths may need to be adjusted.
+
+Running the sieveTest2.py should produce a ‘mallocRank.txt’ file which contains the data on which mallocs were accessed when and backTrace.txt’ from btmalloc. (note, the mallocRank.txt filename can be adjusted in sieveTest2.py). 
+
+To process the output, you can use the processMallocs.pl perl script. It takes three arguments, the backtrace file, the mallocRank.txt and the path to the executable which was simulated. E.g.:
+
+./processMallocs.pl backTrace.txt mallocRank.txt /home/afrodri/sstminiapps/CoMD/exmatex-CoMD-1e850ec/bin/CoMD-serial
+
+This should dump to stdout a list of the different malloc()s, with call stacks, sorted by ‘density’ (cache misses per byte of allocated memory). E.g.:
+
+Sorted by Density:
+#1. MALLOC Address:0xc0e150 Size:19
+ Density: 42431.625 touches/byte
+ Call Stack:
+  /home/afrodri/sstminiapps/CoMD/exmatex-CoMD-1e850ec/src-mpi/CoMD.c:98
+#2. MALLOC Address:0xc0f320 Size:80
+ Density: 3807.625 touches/byte
+ Call Stack:
+  /home/afrodri/sstminiapps/CoMD/exmatex-CoMD-1e850ec/src-mpi/CoMD.c:267
