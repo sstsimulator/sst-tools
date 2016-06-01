@@ -12,6 +12,7 @@
 
 #include <ariel.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 void ariel_enable() {
     printf("ARIEL-CLIENT: Library enabled.\n");
@@ -23,4 +24,8 @@ uint64_t ariel_cycles() {
 
 void ariel_output_stats() {
     printf("ARIEL-CLIENT: Printing statistics.\n");
+}
+
+void ariel_malloc_flag(int64_t id, int count) {
+    printf("ARIEL-CLIENT: flagging next %d mallocs at id %" PRId64 "\n", count, id);
 }
