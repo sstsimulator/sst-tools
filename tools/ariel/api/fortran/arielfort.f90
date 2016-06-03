@@ -21,10 +21,8 @@ MODULE arielfort
   END SUBROUTINE ariel_output_stats
   
   SUBROUTINE ariel_malloc_flag (id, mCount)
-    INTEGER(8), INTENT(IN) :: id 
-    
-    INTEGER(4), INTENT(IN) :: mCount
-    WRITE(*,*) 'ARIEL: malloc flag'
+    INTEGER, INTENT(IN) :: id, mCount
+    !WRITE(*,*) 'ARIEL: malloc flag'
   END SUBROUTINE
 
 END MODULE arielfort
