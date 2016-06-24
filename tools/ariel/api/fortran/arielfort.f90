@@ -20,8 +20,8 @@ MODULE arielfort
 ! WRITE(*,*) 'ARIEL: printing statistics'
   END SUBROUTINE ariel_output_stats
   
-  SUBROUTINE ariel_malloc_flag (id, mCount)
-    INTEGER, INTENT(IN) :: id, mCount
+  SUBROUTINE ariel_malloc_flag (id, mCount, mLevel)
+    INTEGER, INTENT(IN) :: id, mCount, mLevel
     !WRITE(*,*) 'ARIEL: malloc flag'
   END SUBROUTINE
 

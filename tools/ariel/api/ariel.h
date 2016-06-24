@@ -22,7 +22,7 @@ extern "C" {
 void ariel_enable();
 uint64_t ariel_cycles();
 void ariel_output_stats();
-void ariel_malloc_flag(int64_t id, int count);
+void ariel_malloc_flag(int64_t id, int count, int level);
 
 #if defined(c_plusplus) || defined(__cplusplus)
 }
